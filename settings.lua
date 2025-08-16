@@ -1,13 +1,13 @@
-data:extend({
-	{ -- Does this have to be a startup setting?
-		type = "bool-setting",
-		name = "hexcoder-demolishers-no-initial-territory",
-		localised_name = "Also Spawn Normal Territory",
-		setting_type = "startup",
-		default_value = false,
-		order = "a",
-	}
-})
+--data:extend({
+--	{ -- Does this have to be a startup setting?
+--		type = "bool-setting",
+--		name = "hexcoder-demolishers-no-initial-territory",
+--		localised_name = "Also Spawn Normal Territory",
+--		setting_type = "startup",
+--		default_value = false,
+--		order = "a",
+--	}
+--})
 
 data:extend({
     {
@@ -18,3 +18,22 @@ data:extend({
         default_value = false
     }
 })
+
+data:extend({
+    {
+        type = "double-setting",
+        name = "hexcoder-demolishers-spawn-time",
+		localised_name = "Base Respawn Time (minutes)",
+        setting_type = "runtime-global",
+        default_value = 1
+    }
+})
+--data:extend({
+--    {
+--        type = "double-setting",
+--        name = "hexcoder-demolishers-spawn-dist",
+--		localised_name = "Spawn Distance (tiles)",
+--        setting_type = "runtime-global",
+--        default_value = 300
+--    }
+--})

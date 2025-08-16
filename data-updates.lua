@@ -1,8 +1,8 @@
 
 -- Disables map demolisher territory generation by map generator
-if not settings.startup["hexcoder-demolishers-no-initial-territory"].value then
-	data.raw['planet']['vulcanus'].map_gen_settings.territory_settings = nil
-end
+--if not settings.startup["hexcoder-demolishers-no-initial-territory"].value then
+--	data.raw['planet']['vulcanus'].map_gen_settings.territory_settings = nil
+--end
 
 -- Create invisible and inactive dummy demolisher (see-control.lua)
 
@@ -61,11 +61,9 @@ function make_demolisher_head(base_name, order, dbg_sprite)
 		hidden = true,
 		type = "segmented-unit",
 		icon = "__space-age__/graphics/icons/small-demolisher.png",
-		flags = {"placeable-player", "placeable-enemy", "placeable-off-grid", "breaths-air", "not-repairable",
-			"not-in-kill-statistics",
-			"not-blueprintable",
-			"not-deconstructable",
-			"not-on-map",
+		flags = {
+			"placeable-player", "placeable-enemy", "placeable-off-grid", "breaths-air", "not-repairable",
+			"not-in-kill-statistics", "not-blueprintable", "not-deconstructable", "not-on-map",
 		},
 		max_health = 9999999,
 		order = order,
@@ -91,8 +89,6 @@ function make_demolisher_head(base_name, order, dbg_sprite)
 		segment_engine = {
 			segments = {}
 		},
-		
-		ac
 	}
 end
 
@@ -100,4 +96,4 @@ function make_demolisher(base_name, order)
 	data:extend({make_demolisher_head(base_name, order, true)})
 end
 
-make_demolisher("hexocder-dummy-demolisher", "s-h")
+make_demolisher("hexcoder-dummy-demolisher", "s-h")

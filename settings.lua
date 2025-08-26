@@ -12,6 +12,16 @@
 data:extend({
     {
         type = "bool-setting",
+        name = "hexcoder-demolishers-enable-spawn",
+		localised_name = "Enable Respawning",
+        setting_type = "runtime-global",
+        default_value = true
+    }
+})
+
+data:extend({
+    {
+        type = "bool-setting",
         name = "hexcoder-demolishers-debug",
 		localised_name = "Debug Mode",
         setting_type = "runtime-global",
@@ -25,15 +35,15 @@ data:extend({
         name = "hexcoder-demolishers-spawn-time",
 		localised_name = "Base Respawn Time (minutes)",
         setting_type = "runtime-global",
-        default_value = 1
+        default_value = 10
     }
 })
---data:extend({
---    {
---        type = "double-setting",
---        name = "hexcoder-demolishers-spawn-dist",
---		localised_name = "Spawn Distance (tiles)",
---        setting_type = "runtime-global",
---        default_value = 300
---    }
---})
+data:extend({
+    {
+        type = "double-setting",
+        name = "hexcoder-demolishers-retreat-time",
+		localised_name = "Retreat Time (minutes)",
+        setting_type = "runtime-global",
+        default_value = 2
+    }
+})

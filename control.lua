@@ -179,42 +179,25 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 	end
 end)
 
+-- Spawn corpse manually, which was disabled in data.updates, to avoid it deleting ghosts and enabling it to auto-deconstruct
+local function spawn_corpse_manually(demol)
+	for _, seg in pairs(demol.segments) do
+		local corpse = demol.surface.create_entity{
+			name = demol.prototype.name .. "-corpse",
+			force = "enemy",
+			position = seg.position,
+			preserve_ghosts_and_corpses = true,
+		}
+		-- Note: not added to undo queue
+		corpse.order_deconstruction("player")
+	end
+end
 script.on_event(defines.events.on_segmented_unit_died, function(event)
-	--local d = event.segmented_unit.territory and get_terr_data(event.segmented_unit.territory)
-	--if not d then return end -- check if actually a registered territory, ie. has tungsten
-	--
-	--d.timer = settings.global["hexcoder-demolishers-spawn-time"].value * 60*60 -- min to ticks
-	--game.print("Timer = ".. d.timer)
-
-	game.print("Demolisher died")
-
 	local front = event.segmented_unit.segments[1]
 	if not front or not front.position then return end
 
-	local surface = event.segmented_unit.territory.surface
-	local num_buildings = #surface.find_entities_filtered {
-		position = front.position,
-		radius = 32,
-		force = 'player',
-	}
-
-	draw_cross(front.position, surface, 4, { .2, .2, 1 }, nil, 60)
-
-	game.print("Demolisher died Tick: " .. game.tick .. " num entities: " .. num_buildings)
-end)
-script.on_event(defines.events.on_post_segmented_unit_died, function(event)
-	if not event.segments.position then return end
-
-	local surface = game.get_surface(event.surface_index)
-	local num_buildings = #surface.find_entities_filtered {
-		position = event.segments.position,
-		radius = 32,
-		force = 'player',
-	}
-
-	draw_cross(event.segments.position, surface, 4, { 1, .2, .2 }, nil, 60)
-
-	game.print("Demolisher died Post Tick: " .. game.tick .. " num entities: " .. num_buildings)
+	game.print("Demolisher died")
+	spawn_corpse_manually(event.segmented_unit)
 end)
 
 local function update_spawn(id, terr, d, tickrate)

@@ -18,6 +18,10 @@
 --	})
 --end
 
+function string:startswith(start)
+	return self:sub(1, #start) == start
+end
+
 local function make_dummy_demolisher_head(base_name, order, dbg_sprite)
 	local animation = nil
 
@@ -109,10 +113,6 @@ local function tint_demolishers()
 	data.raw['segmented-unit']['medium-demolisher'].animation.layers[1].tint = medium_tint
 	data.raw['segmented-unit']['big-demolisher'].animation.layers[1].tint    = big_tint
 
-	function string:startswith(start)
-		return self:sub(1, #start) == start
-	end
-
 	for name, val in pairs(data.raw['segment']) do
 		if name:startswith("medium-demolisher-") then
 			val.animation.layers[1].tint = medium_tint
@@ -123,196 +123,38 @@ local function tint_demolishers()
 end
 tint_demolishers()
 
--- WIP Not working!
 local function avoid_demolisher_corpse_deleting_ghosts()
-	-- This seems to avoid removing existing ghost entities
-	data.raw['simple-entity']['small-demolisher-corpse'].collision_box = {{0,0}, {0,0}}
-
---[[
-	function make_demolisher_dummy_corpse(base_name, order, scale)
-		local corpse_tint = { 0.7, 0.7, 0.7 }
-		return {
-			{
-				name = base_name .. "-dummy-corpse",
-				localised_name = { "entity-name.demolisher-corpse", { "entity-name." .. base_name } },
-				type = "simple-entity",
-				flags = { "placeable-neutral", "placeable-off-grid" },
-				icon = "__space-age__/graphics/icons/" .. base_name .. "-remains.png",
-				subgroup = "grass",
-				order = "b[decorative]-l[rock]-a[vulcanus]-g[demolisher-corpse]-" .. order,
-
-				collision_box = { { 0, 0 }, { 0, 0 } },
-				selection_box = { { 0, 0 }, { 0, 0 } },
-
-				map_color = { 129, 105, 78 },
-				count_as_rock_for_filtered_deconstruction = true,
-				mined_sound = { filename = "__base__/sound/deconstruct-bricks.ogg" },
-				impact_category = "stone",
-				render_layer = "object",
-				max_health = 2000,
-				resistances =
-				{
-					{
-						type = "fire",
-						percent = 100
-					}
-				},
-				autoplace = {
-					order = "a[landscape]-c[rock]-a[huge]",
-					probability_expression = "vulcanus_rock_huge"
-				},
-				pictures =
-				{
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-05.png",
-						width = 201,
-						height = 179,
-						scale = 1.2 * scale,
-						shift = { 0.25, 0.0625 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-06.png",
-						width = 233,
-						height = 171,
-						scale = 1.2 * scale,
-						shift = { 0.429688, 0.046875 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-07.png",
-						width = 240,
-						height = 192,
-						scale = 1.2 * scale,
-						shift = { 0.398438, 0.03125 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-08.png",
-						width = 219,
-						height = 175,
-						scale = 1.2 * scale,
-						shift = { 0.148438, 0.132812 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-09.png",
-						width = 240,
-						height = 208,
-						scale = 1.2 * scale,
-						shift = { 0.3125, 0.0625 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-10.png",
-						width = 243,
-						height = 190,
-						scale = 1.2 * scale,
-						shift = { 0.1875, 0.046875 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-11.png",
-						width = 249,
-						height = 185,
-						scale = 1.2 * scale,
-						shift = { 0.398438, 0.0546875 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-12.png",
-						width = 273,
-						height = 163,
-						scale = 1.2 * scale,
-						shift = { 0.34375, 0.0390625 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-13.png",
-						width = 275,
-						height = 175,
-						scale = 1.2 * scale,
-						shift = { 0.273438, 0.0234375 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-14.png",
-						width = 241,
-						height = 215,
-						scale = 1.2 * scale,
-						shift = { 0.195312, 0.0390625 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-15.png",
-						width = 318,
-						height = 181,
-						scale = 1.2 * scale,
-						shift = { 0.523438, 0.03125 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-16.png",
-						width = 217,
-						height = 224,
-						scale = 1.2 * scale,
-						shift = { 0.0546875, 0.0234375 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-17.png",
-						width = 332,
-						height = 228,
-						scale = 1.2 * scale,
-						shift = { 0.226562, 0.046875 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-18.png",
-						width = 290,
-						height = 243,
-						scale = 1.2 * scale,
-						shift = { 0.195312, 0.0390625 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-19.png",
-						width = 349,
-						height = 225,
-						scale = 1.2 * scale,
-						shift = { 0.609375, 0.0234375 },
-						tint = corpse_tint
-					},
-					{
-						filename = "__space-age__/graphics/decorative/huge-volcanic-rock/huge-volcanic-rock-20.png",
-						width = 287,
-						height = 250,
-						scale = 1.2 * scale,
-						shift = { 0.132812, 0.03125 },
-						tint = corpse_tint
-					}
-				}
-			}
-		}
-	end
+	--[[ enemies.lua:
+	corpse = base_name .. "-corpse", -- doesn't work. Because not a real corpse?
+	dying_trigger_effect =
+	{
+		{
+		type = "create-entity",
+		entity_name = base_name .. "-corpse"
+		},
+	]]--
 	
-	data:extend(make_demolisher_dummy_corpse("small-demolisher", "s-h", 0.5))
-	data:extend(make_demolisher_dummy_corpse("medium-demolisher", "s-i", 0.75))
-	data:extend(make_demolisher_dummy_corpse("big-demolisher", "s-j", 1.0))
-	
-	for name, val in pairs(data.raw['segment']) do
-		if name:startswith("small-demolisher-segment") then
-			--local effects = val.dying_trigger_effect
-			----if val.dying_trigger_effect[1].type == "create-entity" then
-			--table.remove(effects, 1)
-			---- This causes no corpse to appear, but somehow ghost entities are deleted anyway
-			--val.dying_trigger_effect = nil
-			----end
-			
-			val.dying_trigger_effect[1].entity_name = "small-demolisher-dummy-corpse"
+	-- NOTE: changing corpse collision_box = { { 0, 0 }, { 0, 0 } }, still deletes ghosts near entity center!
+
+	-- Remove spawned corpse to avoid it deleting ghosts, then let runtime script manually spawn it, keeping ghosts and auto-deconstructing it
+	-- NOTE: just removing create-entity causes no corpse rocks to spawn, but still deletes ghosts
+	-- likely because the game tries to spawn corpse, but fails due to differing entity type
+	for name, val in pairs(data.raw['segmented-unit']) do
+		if name == "small-demolisher" or name == "medium-demolisher" or name == "big-demolisher" then
+			val.corpse = nil
+			if val.dying_trigger_effect and val.dying_trigger_effect[1].type == "create-entity" then
+				table.remove(val.dying_trigger_effect, 1)
+			end
 		end
 	end
---]]
+	for name, val in pairs(data.raw['segment']) do
+		if name:startswith("small-demolisher") or name:startswith("medium-demolisher") or name:startswith("big-demolisher") then
+			val.corpse = nil
+			if val.dying_trigger_effect and val.dying_trigger_effect[1].type == "create-entity" then
+				table.remove(val.dying_trigger_effect, 1)
+			end
+		end
+	end
 end
 avoid_demolisher_corpse_deleting_ghosts()
 

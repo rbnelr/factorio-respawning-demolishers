@@ -116,14 +116,14 @@ local function register_territory(terr)
 end
 
 local function init_chunk(surface, chunk_area, chunk_pos)
-	local has_tungsten = #surface.find_entities_filtered({
+	local has_tungsten = surface.count_entities_filtered({
 		area = chunk_area,
-		type = 'resource',
-		name = 'tungsten-ore',
+		type = "resource",
+		name = "tungsten-ore",
 	}) > 0
 
 	if has_tungsten then
-		game.print('Found tungsten in ' .. surface.name .. " | (" .. chunk_pos.x .. ", " .. chunk_pos.y .. ")")
+		game.print("Found tungsten in " .. surface.name .. " | (" .. chunk_pos.x .. ", " .. chunk_pos.y .. ")")
 
 		local terr = surface.get_territory_for_chunk(chunk_pos)
 		if terr then
@@ -172,7 +172,7 @@ script.on_event(defines.events.on_territory_destroyed, function(event)
 	game.print("on_territory_destroyed with " .. #event.territory.get_chunks() .. " chunks")
 end)
 script.on_event(defines.events.on_chunk_generated, function(event)
-	--game.print('Chunkgen '.. event.surface.name .." | (".. event.position.x ..", ".. event.position.y ..")")
+	--game.print("Chunkgen ".. event.surface.name .." | (".. event.position.x ..", ".. event.position.y ..")")
 
 	if event.surface.name == "vulcanus" then
 		init_chunk(event.surface, event.area, event.position)
@@ -318,11 +318,11 @@ local function update_demol(demol)
 		text = "Enraged_at_nothing"
 	end
 
-	local is_eating = #demol.territory.surface.find_entities_filtered {
+	local is_eating = demol.territory.surface.count_entities_filtered {
 		position = front.position,
 		radius = 8,
-		type = 'resource',
-		name = 'tungsten-ore',
+		type = "resource",
+		name = "tungsten-ore",
 	} > 0
 
 	if is_eating then
@@ -394,14 +394,14 @@ local function merge_connected_tungsten_chunks(surface, start_chunkpos)
 	local function checked_insert (chunkpos)
 		if visited[chunkpos] then return end
 		
-		-- TODO: should probably cache list of chunks with tungsten to avoid repeated find_entities_filtered
-		local has_tungsten = #surface.find_entities_filtered({
+		-- TODO: should probably cache list of chunks with tungsten to avoid repeated count_entities_filtered
+		local has_tungsten = surface.count_entities_filtered({
 			area = {
 				{ chunkpos.x    * 32,  chunkpos.y    * 32},
 				{(chunkpos.x+1) * 32, (chunkpos.y+1) * 32}
 			},
-			type = 'resource',
-			name = 'tungsten-ore',
+			type = "resource",
+			name = "tungsten-ore",
 		}) > 0
 		
 		if has_tungsten then
@@ -448,11 +448,11 @@ local function for_tungsten_chunk(surface, chunkpos)
 		-- Note: Extending existing territory can leave existing territory with no chunks}
 		-- game automatically will delete these territories and also delete their assigned demolishers
 		
-		log('Extend existing territory')
+		log("Extend existing territory")
 	else
 		territory = surface.create_territory{chunks=chunks}
 		
-		log('Create new territory')
+		log("Create new territory")
 	end
 	
 	-- Add invisible and inactive dummy demolisher as a workaround to allow territories to stay visible
@@ -463,17 +463,15 @@ end
 
 -- Merge newly generated chunks with tungsten into existing territories
 script.on_event(defines.events.on_chunk_generated, function(event)
-	--game.print('Chunkgen '.. event.surface.name .." | (".. event.position.x ..", ".. event.position.y ..")")
+	--game.print("Chunkgen ".. event.surface.name .." | (".. event.position.x ..", ".. event.position.y ..")")
 	
 	if event.surface.name == "vulcanus" then
-		local has_tungsten = #event.surface.find_entities_filtered({
-			area = event.area,
-			type = 'resource',
-			name = 'tungsten-ore',
+		local has_tungsten = event.surface.count_entities_filtered({
+			area = event.area, type = "resource", name = "tungsten-ore",
 		}) > 0
 		
 		if has_tungsten then
-			log('Found tungsten in '.. event.surface.name .." | (".. event.position.x ..", ".. event.position.y ..")")
+			log("Found tungsten in ".. event.surface.name .." | (".. event.position.x ..", ".. event.position.y ..")")
 			
 			for_tungsten_chunk(event.surface, event.position)
 		end
@@ -481,9 +479,132 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 end)
 ]]
 
---script.on_event(defines.events.on_tick, function(event)
---	if not settings.global["hexcoder-demolishers-debug"].value then return end
---	local vulcanus = game.get_surface("vulcanus")
---	if not vulcanus then return end
---	
---end)
+local dbg_tickrate = 60*2
+
+local function vis_chunks_dijstra(terr)
+	-- find currently generated chunks containing tungsten using flood fill
+	local visited = {}
+	local queue = {}
+	local chunks = {}
+	
+	-- Oh no
+	local function hash(chunk)
+		return chunk.x + 1000 + (chunk.y + 1000) * 10000
+	end
+	
+	for _, chunk in pairs(terr.get_chunks()) do
+		local has_tungsten = terr.surface.count_entities_filtered({
+			area = chunk.area, type = "resource", name = "tungsten-ore",
+		}) > 0
+		local lava_ratio = terr.surface.count_tiles_filtered({
+			area = chunk.area, name = {"lava", "lava-hot"},
+		}) / (32*32)
+		
+		if has_tungsten then
+			table.insert(queue, chunk)
+			chunks[hash(chunk)] = { dist=0, pred=nil, lava_ratio=lava_ratio }
+		end
+	end
+	
+	local function order(a, b)
+		return chunks[hash(a)].dist < chunks[hash(b)].dist
+	end
+	local function checked_insert(chunk, chunk_dist, neighbour_chunk)
+		local h = hash(neighbour_chunk)
+		if visited[h] or terr.surface.get_territory_for_chunk(neighbour_chunk) ~= terr then return end
+		
+		local val = chunks[h]
+		if val == nil then
+			local area = {{neighbour_chunk.x*32, neighbour_chunk.y*32}, {neighbour_chunk.x*32+32, neighbour_chunk.y*32+32}}
+			local lava_ratio = terr.surface.count_tiles_filtered({
+				area = area, name = {"lava", "lava-hot"},
+			}) / (32*32)
+			
+			val = { dist = 999999999, lava_ratio=lava_ratio }
+			chunks[h] = val
+		end
+		
+		local new_dist = chunk_dist + 1 + val.lava_ratio * 2.5
+		
+		if new_dist < val.dist then
+			table.insert(queue, neighbour_chunk)
+			val.dist = new_dist
+			val.pred = chunk
+		end
+	end
+	
+	local count = 0
+	
+	while #queue > 0 do
+		if count > 1000 then break end
+		count = count + 1
+		
+		table.sort(queue, order)
+		local chunk = table.remove(queue, 1)
+		local h = hash(chunk)
+		if not visited[h] then
+			visited[h] = true
+			local chunk_dist = chunks[h].dist
+			local pred = chunks[h].pred
+			
+			rendering.draw_text { text="".. math.floor(chunks[h].dist*100)/100, target={chunk.x*32+16, chunk.y*32+16},
+				scale=20, color={ .5, 1, .5 }, surface=terr.surface, render_mode="chart", time_to_live=dbg_tickrate*20 }
+			if pred then
+				rendering.draw_line { from={pred.x*32+16, pred.y*32+16}, to={chunk.x*32+16, chunk.y*32+16},
+					width=4, color={ .5, 1, .5 }, surface=terr.surface, render_mode="chart", time_to_live=dbg_tickrate }
+			end
+			
+			checked_insert(chunk, chunk_dist, { x=chunk.x -1, y=chunk.y })
+			checked_insert(chunk, chunk_dist, { x=chunk.x +1, y=chunk.y })
+			checked_insert(chunk, chunk_dist, { x=chunk.x, y=chunk.y -1 })
+			checked_insert(chunk, chunk_dist, { x=chunk.x, y=chunk.y +1 })
+		end
+	end
+end
+
+script.on_nth_tick(dbg_tickrate, function(event)
+	if not settings.global["hexcoder-demolishers-debug"].value then return end
+	local vulcanus = game.get_surface("vulcanus")
+	if not vulcanus then return end
+	
+	for _, terr in pairs(vulcanus.get_territories()) do
+		for _, c in pairs(terr.get_chunks()) do
+			local p00 = { c.x*32, c.y*32 }
+			local p01 = { c.x*32+32, c.y*32 }
+			local p10 = { c.x*32, c.y*32+32 }
+			local p11 = { c.x*32+32, c.y*32+32 }
+			
+			local col = { 1, 0.5, 0 }
+			
+			if vulcanus.get_territory_for_chunk({ c.x-1, c.y }) ~= terr then
+				rendering.draw_line{ from=p00, to=p10, color=col, width = 8, surface=vulcanus, time_to_live=dbg_tickrate, render_mode="chart" }
+			end
+			if vulcanus.get_territory_for_chunk({ c.x+1, c.y }) ~= terr then
+				rendering.draw_line{ from=p01, to=p11, color=col, width = 8, surface=vulcanus, time_to_live=dbg_tickrate, render_mode="chart" }
+			end
+			if vulcanus.get_territory_for_chunk({ c.x, c.y-1 }) ~= terr then
+				rendering.draw_line{ from=p00, to=p01, color=col, width = 8, surface=vulcanus, time_to_live=dbg_tickrate, render_mode="chart" }
+			end
+			if vulcanus.get_territory_for_chunk({ c.x, c.y+1 }) ~= terr then
+				rendering.draw_line{ from=p10, to=p11, color=col, width = 8, surface=vulcanus, time_to_live=dbg_tickrate, render_mode="chart" }
+			end
+		end
+	end
+	
+	for c in vulcanus.get_chunks() do
+		local color = { 0.2, 0.2, 0.2 }
+		if vulcanus.is_chunk_generated(c) then color = { 0, 0, 1 } end
+		rendering.draw_rectangle{ left_top = {c.x*32+4, c.y*32+4}, right_bottom = {c.x*32+32-4, c.y*32+32-4},
+			color = color, width = 32, surface = vulcanus, time_to_live = dbg_tickrate, render_mode = "chart" }
+	end
+	
+	for _, terr in pairs(vulcanus.get_territories()) do
+		--register_territory(terr)
+		--local d = get_terr_data(terr)
+		--if not d.did_pathfind then
+		--	d.did_pathfind = true
+			vis_chunks_dijstra(terr)
+			--break
+		--end
+	end
+end)

@@ -5,7 +5,6 @@
 --		localised_name = "Also Spawn Normal Territory",
 --		setting_type = "startup",
 --		default_value = false,
---		order = "a",
 --	}
 --})
 

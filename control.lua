@@ -181,13 +181,23 @@ end)
 
 -- Spawn corpse manually, which was disabled in data.updates, to avoid it deleting ghosts and enabling it to auto-deconstruct
 local function spawn_corpse_manually(demol)
+	local num_variations = 16 -- TOOD: Make dynamic ?
+	
 	for _, seg in pairs(demol.segments) do
 		local corpse = demol.surface.create_entity{
-			name = demol.prototype.name .. "-corpse",
-			force = "enemy",
+			--name = demol.prototype.name .. "-corpse",
+			name = "hexcoder-".. demol.prototype.name .. "-corpse-".. math.random(1, num_variations),
+			force = "player",
 			position = seg.position,
 			preserve_ghosts_and_corpses = true,
 		}
+		
+		local inventory = corpse.get_inventory(defines.inventory.item_main)
+		inventory.insert({ name="tungsten-ore", count=math.random(100, 500) })
+		inventory.insert({ name="stone", count=math.random(5, 35) })
+		
+		corpse.operable = false -- Prevent player from opening inventory
+		
 		-- Note: not added to undo queue
 		corpse.order_deconstruction("player")
 	end
